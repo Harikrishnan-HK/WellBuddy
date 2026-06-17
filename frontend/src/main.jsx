@@ -9,4 +9,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
+// Hide splash after first paint
+requestAnimationFrame(() => setTimeout(() => window.__hideSplash?.(), 80));
