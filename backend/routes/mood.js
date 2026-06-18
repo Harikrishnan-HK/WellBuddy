@@ -4,17 +4,24 @@ const db = require('../db');
 
 // POST /api/mood
 router.post('/', (req, res) => {
+  console.log('📥 Mood POST received:', JSON.stringify(req.body));
   const { mood, energy, note } = req.body;
-  const date = req.body.date || new Date().toISOString().slice(0, 10);
-  const time = req.body.time || new Date().toTimeString().slice(0, 5);
+  // Always use server time — Shortcuts sends non-standard date formats
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const time = now.toTimeString().slice(0, 5);
 
-  if (!mood || !energy) return res.status(400).json({ error: 'mood and energy required' });
+  if (!mood || !energy) {
+    console.log('❌ Missing mood or energy. Got:', { mood, energy });
+    return res.status(400).json({ error: 'mood and energy required', received: req.body });
+  }
 
   const result = db.prepare(`
     INSERT INTO mood_logs (date, time, mood, energy, note) VALUES (?, ?, ?, ?, ?)
   `).run(date, time, mood, energy, note || null);
 
-  res.json({ ok: true, id: result.lastInsertRowid });
+  console.log(`✅ Mood saved: mood=${mood} energy=${energy} date=${date}`);
+  res.json({ ok: true, id: result.lastInsertRowid, mood, energy, date });
 });
 
 // GET /api/mood/week
