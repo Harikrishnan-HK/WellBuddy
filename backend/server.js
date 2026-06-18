@@ -9,6 +9,17 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Log every incoming request with timestamp, method, path, and body
+app.use((req, res, next) => {
+  const time = new Date().toLocaleTimeString();
+  const from = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.log(`\n[${time}] ${req.method} ${req.path}  from ${from}`);
+  if (Object.keys(req.body).length > 0) {
+    console.log('  body:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
+
 app.use('/api/health', require('./routes/health'));
 app.use('/api/metrics', require('./routes/metrics'));
 app.use('/api/mood', require('./routes/mood'));
