@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { api } from '../api/client';
+import { useRefresh } from '../hooks/useRefresh';
 import MetricCard from '../components/MetricCard';
 import RingScore from '../components/RingScore';
 
@@ -11,40 +12,27 @@ function calcScores(metrics, meditation, workouts) {
   const sleep = metrics.sleep_hours?.value || 0;
   const hrv = metrics.hrv?.value || 0;
   const calories = metrics.active_calories?.value || 0;
-
   const activityScore = Math.min((steps / 10000) * 40 + (calories / 500) * 30 + (workouts.length > 0 ? 30 : 0), 100);
   const sleepScore = Math.min((sleep / 8) * 70 + (hrv / 80) * 30, 100);
   const mindScore = Math.min((meditation / 20) * 100, 100);
-
-  return {
-    activity: Math.round(activityScore),
-    sleep: Math.round(sleepScore),
-    mind: Math.round(mindScore),
-  };
+  return { activity: Math.round(activityScore), sleep: Math.round(sleepScore), mind: Math.round(mindScore) };
 }
 
 export default function Today() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const fetchToday = useCallback(() => api.getToday(), []);
+  const { data, loading, refreshing, lastUpdated, refresh } = useRefresh(fetchToday);
+
   const [mood, setMood] = useState(3);
   const [energy, setEnergy] = useState(3);
   const [note, setNote] = useState('');
-  const [moodSaved, setMoodSaved] = useState(false);
   const [showMoodForm, setShowMoodForm] = useState(false);
-
-  useEffect(() => {
-    api.getToday()
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const [moodSaved, setMoodSaved] = useState(false);
 
   const saveMood = async () => {
     await api.postMood({ mood, energy, note });
-    setMoodSaved(true);
     setShowMoodForm(false);
-    const fresh = await api.getToday();
-    setData(fresh);
+    setMoodSaved(true);
+    refresh();
   };
 
   if (loading) {
@@ -59,20 +47,36 @@ export default function Today() {
   const workouts = data?.workouts || [];
   const medMin = data?.meditation_minutes || m.mindful_minutes?.value || 0;
   const moodLog = data?.mood;
-
   const scores = calcScores(m, medMin, workouts);
-
-  const todayLabel = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  });
+  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
     <div className="px-4 pt-6 pb-4 space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100">Good {greeting()}</h1>
-        <p className="text-sm text-slate-400">{todayLabel}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100">Good {greeting()}</h1>
+          <p className="text-sm text-slate-400">{todayLabel}</p>
+        </div>
+        <button
+          onClick={refresh}
+          disabled={refreshing}
+          className="mt-1 p-2 rounded-xl text-slate-400 active:bg-slate-700 transition-colors"
+          title="Refresh"
+        >
+          <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
       </div>
+
+      {/* Last updated */}
+      {lastUpdated && (
+        <p className="text-[11px] text-slate-600 -mt-3">
+          Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      )}
 
       {/* Ring Scores */}
       <div className="bg-[#1e293b] rounded-2xl p-4">
@@ -88,45 +92,28 @@ export default function Today() {
       <div className="space-y-2">
         <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Metrics</p>
         <div className="grid grid-cols-2 gap-2">
-          <MetricCard
-            icon="👣" label="Steps"
-            value={m.steps ? m.steps.value.toLocaleString() : null}
-            unit="steps"
+          <MetricCard icon="👣" label="Steps"
+            value={m.steps ? m.steps.value.toLocaleString() : null} unit="steps"
             sub={m.steps ? `${Math.round((m.steps.value / 10000) * 100)}% of goal` : 'No data'}
-            color="text-indigo-400"
-          />
-          <MetricCard
-            icon="🌙" label="Sleep"
-            value={m.sleep_hours ? m.sleep_hours.value.toFixed(1) : null}
-            unit="hrs"
+            color="text-indigo-400" />
+          <MetricCard icon="🌙" label="Sleep"
+            value={m.sleep_hours ? m.sleep_hours.value.toFixed(1) : null} unit="hrs"
             sub={m.sleep_deep_hours ? `${m.sleep_deep_hours.value.toFixed(1)}h deep` : undefined}
-            color="text-cyan-400"
-          />
-          <MetricCard
-            icon="💓" label="HRV"
-            value={m.hrv ? Math.round(m.hrv.value) : null}
-            unit="ms"
+            color="text-cyan-400" />
+          <MetricCard icon="💓" label="HRV"
+            value={m.hrv ? Math.round(m.hrv.value) : null} unit="ms"
             sub={m.resting_heart_rate ? `RHR ${Math.round(m.resting_heart_rate.value)} bpm` : undefined}
-            color="text-rose-400"
-          />
-          <MetricCard
-            icon="🔥" label="Active Cal"
-            value={m.active_calories ? Math.round(m.active_calories.value) : null}
-            unit="kcal"
-            color="text-orange-400"
-          />
-          <MetricCard
-            icon="🧘" label="Meditation"
-            value={medMin ? Math.round(medMin) : null}
-            unit="min"
-            color="text-violet-400"
-          />
-          <MetricCard
-            icon="😊" label="Mood"
+            color="text-rose-400" />
+          <MetricCard icon="🔥" label="Active Cal"
+            value={m.active_calories ? Math.round(m.active_calories.value) : null} unit="kcal"
+            color="text-orange-400" />
+          <MetricCard icon="🧘" label="Meditation"
+            value={medMin ? Math.round(medMin) : null} unit="min"
+            color="text-violet-400" />
+          <MetricCard icon="😊" label="Mood"
             value={moodLog ? MOOD_LABELS[moodLog.mood] : null}
             sub={moodLog ? `Energy ${ENERGY_LABELS[moodLog.energy]}` : 'Log below'}
-            color="text-yellow-400"
-          />
+            color="text-yellow-400" />
         </div>
       </div>
 
@@ -169,12 +156,9 @@ export default function Today() {
             <div>
               <p className="text-xs text-slate-400 mb-2">Mood</p>
               <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setMood(v)}
-                    className={`flex-1 text-xl py-1 rounded-xl transition-all ${mood === v ? 'bg-indigo-600 scale-110' : 'bg-slate-700'}`}
-                  >
+                {[1,2,3,4,5].map((v) => (
+                  <button key={v} onClick={() => setMood(v)}
+                    className={`flex-1 text-xl py-1 rounded-xl transition-all ${mood === v ? 'bg-indigo-600 scale-110' : 'bg-slate-700'}`}>
                     {MOOD_LABELS[v]}
                   </button>
                 ))}
@@ -183,43 +167,27 @@ export default function Today() {
             <div>
               <p className="text-xs text-slate-400 mb-2">Energy</p>
               <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setEnergy(v)}
-                    className={`flex-1 text-xl py-1 rounded-xl transition-all ${energy === v ? 'bg-violet-600 scale-110' : 'bg-slate-700'}`}
-                  >
+                {[1,2,3,4,5].map((v) => (
+                  <button key={v} onClick={() => setEnergy(v)}
+                    className={`flex-1 text-xl py-1 rounded-xl transition-all ${energy === v ? 'bg-violet-600 scale-110' : 'bg-slate-700'}`}>
                     {ENERGY_LABELS[v]}
                   </button>
                 ))}
               </div>
             </div>
-            <input
-              type="text"
-              placeholder="Add a note (optional)"
-              value={note}
+            <input type="text" placeholder="Add a note (optional)" value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none border border-slate-700 focus:border-indigo-500"
-            />
+              className="w-full bg-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none border border-slate-700 focus:border-indigo-500" />
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowMoodForm(false)}
-                className="flex-1 py-2 rounded-xl text-sm text-slate-400 bg-slate-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveMood}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500"
-              >
-                Save
-              </button>
+              <button onClick={() => setShowMoodForm(false)}
+                className="flex-1 py-2 rounded-xl text-sm text-slate-400 bg-slate-700">Cancel</button>
+              <button onClick={saveMood}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500">Save</button>
             </div>
           </div>
         ) : null}
       </div>
 
-      {/* No data hint */}
       {Object.keys(m).length === 0 && (
         <div className="bg-[#1e293b] rounded-2xl p-4 border border-dashed border-slate-600 text-center">
           <p className="text-sm text-slate-400">No health data synced yet.</p>
