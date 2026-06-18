@@ -5,6 +5,7 @@
   "scripts": {
     "server": "node backend/server.js",
     "dev": "cd frontend && npm run dev",
+    "prestart": "lsof -ti:3001 | xargs kill -9 2>/dev/null; lsof -ti:5173 | xargs kill -9 2>/dev/null; true",
     "start": "concurrently \"npm run server\" \"npm run dev\"",
     "install:all": "npm install && cd frontend && npm install"
   },
