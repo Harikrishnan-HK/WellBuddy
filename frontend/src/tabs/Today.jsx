@@ -58,17 +58,31 @@ export default function Today() {
           <h1 className="text-2xl font-bold text-slate-100">Good {greeting()}</h1>
           <p className="text-sm text-slate-400">{todayLabel}</p>
         </div>
-        <button
-          onClick={refresh}
-          disabled={refreshing}
-          className="mt-1 p-2 rounded-xl text-slate-400 active:bg-slate-700 transition-colors"
-          title="Refresh"
-        >
-          <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
+        <div className="flex gap-2 mt-1">
+          {/* Sync from Apple Health via Shortcut */}
+          <button
+            onClick={() => {
+              window.location.href = 'shortcuts://run-shortcut?name=WellBuddy%20Sync';
+              // Refresh data after shortcut runs (give it 8s to complete)
+              setTimeout(refresh, 8000);
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-indigo-600 text-white active:opacity-70"
+            title="Sync from Apple Health"
+          >
+            <span>⚡</span> Sync
+          </button>
+          {/* Refresh display */}
+          <button
+            onClick={refresh}
+            disabled={refreshing}
+            className="p-2 rounded-xl text-slate-400 active:bg-slate-700 transition-colors"
+          >
+            <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Last updated */}
