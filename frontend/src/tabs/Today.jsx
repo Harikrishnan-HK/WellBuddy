@@ -3,147 +3,213 @@ import { api } from '../api/client';
 import { useRefresh } from '../hooks/useRefresh';
 import MetricCard from '../components/MetricCard';
 import RingScore from '../components/RingScore';
+import Icon from '../components/Icon';
 
-const MOOD_LABELS = ['', '😞', '😕', '😐', '🙂', '😄'];
+const MOOD_LABELS   = ['', '😞', '😕', '😐', '🙂', '😄'];
 const ENERGY_LABELS = ['', '🪫', '😴', '⚡', '🔋', '🚀'];
 
+const QUOTES = [
+  "Small steps every day.",
+  "Rest is part of progress.",
+  "Your body hears everything your mind says.",
+  "Consistency beats perfection.",
+  "One good decision at a time.",
+  "Be kind to yourself today.",
+  "Progress, not perfection.",
+  "What you do daily shapes who you become.",
+  "Gratitude turns what we have into enough.",
+  "Take care of your body — it's the only place you live.",
+  "Today is a fresh start.",
+  "Energy flows where attention goes.",
+  "Strong mind, strong body.",
+  "Breathe. You're doing better than you think.",
+  "Every effort counts, even the quiet ones.",
+  "Nourish to flourish.",
+  "Your future self will thank you.",
+  "Health is a daily practice.",
+  "A little better every day.",
+  "You have everything you need right now.",
+  "Move, rest, repeat.",
+  "Kindness starts with yourself.",
+  "Choose progress over perfection.",
+  "Celebrate the small wins.",
+  "The best time to start is now.",
+  "Your habits are your future.",
+  "Rest well, live well.",
+  "Do less, but better.",
+  "Show up for yourself.",
+  "Growth happens outside comfort zones.",
+];
+
+function dailyQuote() {
+  const day = Math.floor(Date.now() / 86400000);
+  return QUOTES[day % QUOTES.length];
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Morning';
+  if (h < 17) return 'Afternoon';
+  return 'Evening';
+}
+
 function calcScores(metrics, meditation, workouts) {
-  const steps = metrics.steps?.value || 0;
-  const sleep = metrics.sleep_hours?.value || 0;
-  const hrv = metrics.hrv?.value || 0;
+  const steps    = metrics.steps?.value || 0;
+  const sleep    = metrics.sleep_hours?.value || 0;
+  const hrv      = metrics.hrv?.value || 0;
   const calories = metrics.active_calories?.value || 0;
   const activityScore = Math.min((steps / 10000) * 40 + (calories / 500) * 30 + (workouts.length > 0 ? 30 : 0), 100);
-  const sleepScore = Math.min((sleep / 8) * 70 + (hrv / 80) * 30, 100);
-  const mindScore = Math.min((meditation / 20) * 100, 100);
+  const sleepScore    = Math.min((sleep / 8) * 70 + (hrv / 80) * 30, 100);
+  const mindScore     = Math.min((meditation / 20) * 100, 100);
   return { activity: Math.round(activityScore), sleep: Math.round(sleepScore), mind: Math.round(mindScore) };
 }
 
-export default function Today() {
+export default function Today({ onNavigate }) {
   const fetchToday = useCallback(() => api.getToday(), []);
   const { data, loading, refreshing, lastUpdated, refresh } = useRefresh(fetchToday);
 
-  const [mood, setMood] = useState(3);
+  const [showMoodSheet, setShowMoodSheet] = useState(false);
+  const [mood,   setMood]   = useState(3);
   const [energy, setEnergy] = useState(3);
-  const [note, setNote] = useState('');
-  const [showMoodForm, setShowMoodForm] = useState(false);
-  const [moodSaved, setMoodSaved] = useState(false);
+  const [note,   setNote]   = useState('');
+  const [moodSaving, setMoodSaving] = useState(false);
 
   const saveMood = async () => {
+    setMoodSaving(true);
     await api.postMood({ mood, energy, note });
-    setShowMoodForm(false);
-    setMoodSaved(true);
+    setMoodSaving(false);
+    setShowMoodSheet(false);
+    setNote('');
     refresh();
+  };
+
+  const handleSync = () => {
+    const returnUrl = encodeURIComponent(window.location.href);
+    window.location.href = `shortcuts://run-shortcut?name=WellBuddy%20Sync&x-success=${returnUrl}`;
+    setTimeout(refresh, 10000);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#AA7452', borderTopColor: 'transparent' }} />
       </div>
     );
   }
 
-  const m = data?.metrics || {};
+  const m        = data?.metrics || {};
   const workouts = data?.workouts || [];
-  const medMin = data?.meditation_minutes || m.mindful_minutes?.value || 0;
-  const moodLog = data?.mood;
-  const scores = calcScores(m, medMin, workouts);
+  const medMin   = data?.meditation_minutes || m.mindful_minutes?.value || 0;
+  const moodLog  = data?.mood;
+  const scores   = calcScores(m, medMin, workouts);
   const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div className="px-4 pt-6 pb-4 space-y-5">
+    <div className="px-4 pb-4 space-y-5" style={{ paddingTop: 'max(env(safe-area-inset-top), 1.5rem)' }}>
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">Good {greeting()}</h1>
-          <p className="text-sm text-slate-400">{todayLabel}</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#D4C9C7' }}>{greeting()}, Hk</h1>
+          <p className="text-sm" style={{ color: '#969A9E' }}>{todayLabel}</p>
         </div>
-        <div className="flex gap-2 mt-1">
-          {/* Sync from Apple Health via Shortcut */}
-          <button
-            onClick={() => {
-              window.location.href = 'shortcuts://run-shortcut?name=WellBuddy%20Sync';
-              // Refresh data after shortcut runs (give it 8s to complete)
-              setTimeout(refresh, 8000);
-            }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-indigo-600 text-white active:opacity-70"
-            title="Sync from Apple Health"
-          >
-            <span>⚡</span> Sync
-          </button>
-          {/* Refresh display */}
-          <button
-            onClick={refresh}
-            disabled={refreshing}
-            className="p-2 rounded-xl text-slate-400 active:bg-slate-700 transition-colors"
-          >
-            <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
+        <button
+          onClick={handleSync}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold active:opacity-70 mt-1"
+          style={{ background: '#AA7452', color: '#051822' }}
+        >
+          <Icon name="refresh" size={13} className={refreshing ? 'animate-spin' : ''} />
+          Sync
+        </button>
       </div>
 
-      {/* Last updated */}
-      {lastUpdated && (
-        <p className="text-[11px] text-slate-600 -mt-3">
-          Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      {/* Updated time + weight shortcut */}
+      <div className="flex items-center justify-between -mt-3">
+        <p className="text-[11px]" style={{ color: '#3A4C55' }}>
+          {lastUpdated
+            ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            : ' '}
         </p>
-      )}
+        <button
+          onClick={() => onNavigate?.('Health')}
+          className="flex items-center gap-1.5 active:opacity-60"
+          style={{ color: '#6B7680' }}
+        >
+          <Icon name="weight" size={13} />
+          <span className="text-[11px]">{m.weight_kg ? `${m.weight_kg.value.toFixed(1)} kg` : 'Log weight'}</span>
+        </button>
+      </div>
 
       {/* Ring Scores */}
-      <div className="bg-[#1e293b] rounded-2xl p-4">
-        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-4">Today's Scores</p>
+      <div className="rounded-2xl p-4" style={{ background: '#2D383E' }}>
+        <p className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: '#969A9E' }}>Today's Scores</p>
         <div className="flex justify-around">
-          <RingScore label="Activity" value={scores.activity} color="#6366f1" />
-          <RingScore label="Sleep" value={scores.sleep} color="#22d3ee" />
-          <RingScore label="Mind" value={scores.mind} color="#a78bfa" />
+          <RingScore label="Activity" value={scores.activity} color="#AA7452" />
+          <RingScore label="Sleep"    value={scores.sleep}    color="#7C5841" />
+          <RingScore label="Mind"     value={scores.mind}     color="#C4956A" />
         </div>
       </div>
 
       {/* Metric Cards */}
       <div className="space-y-2">
-        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Metrics</p>
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#969A9E' }}>Metrics</p>
         <div className="grid grid-cols-2 gap-2">
-          <MetricCard icon="👣" label="Steps"
+          <MetricCard
+            icon={<Icon name="stairs" size={18} />}
+            label="Steps"
             value={m.steps ? m.steps.value.toLocaleString() : null} unit="steps"
             sub={m.steps ? `${Math.round((m.steps.value / 10000) * 100)}% of goal` : 'No data'}
-            color="text-indigo-400" />
-          <MetricCard icon="🌙" label="Sleep"
+            onClick={() => onNavigate?.('Health', 'Fitness')} />
+          <MetricCard
+            icon={<Icon name="moon" size={18} />}
+            label="Sleep"
             value={m.sleep_hours ? m.sleep_hours.value.toFixed(1) : null} unit="hrs"
             sub={m.sleep_deep_hours ? `${m.sleep_deep_hours.value.toFixed(1)}h deep` : undefined}
-            color="text-cyan-400" />
-          <MetricCard icon="💓" label="HRV"
+            onClick={() => onNavigate?.('Health', 'Sleep')} />
+          <MetricCard
+            icon={<Icon name="heart" size={18} />}
+            label="HRV"
             value={m.hrv ? Math.round(m.hrv.value) : null} unit="ms"
             sub={m.resting_heart_rate ? `RHR ${Math.round(m.resting_heart_rate.value)} bpm` : undefined}
-            color="text-rose-400" />
-          <MetricCard icon="🔥" label="Active Cal"
+            onClick={() => onNavigate?.('Health', 'Sleep')} />
+          <MetricCard
+            icon={<Icon name="flame" size={18} />}
+            label="Active Cal"
             value={m.active_calories ? Math.round(m.active_calories.value) : null} unit="kcal"
-            color="text-orange-400" />
-          <MetricCard icon="🧘" label="Meditation"
+            onClick={() => onNavigate?.('Health', 'Fitness')} />
+          <MetricCard
+            icon={<Icon name="lotus" size={18} />}
+            label="Meditation"
             value={medMin ? Math.round(medMin) : null} unit="min"
-            color="text-violet-400" />
-          <MetricCard icon="😊" label="Mood"
+            onClick={() => onNavigate?.('Mind', 'Meditation')} />
+          <MetricCard
+            icon={<Icon name="message" size={18} />}
+            label="Mood"
             value={moodLog ? MOOD_LABELS[moodLog.mood] : null}
-            sub={moodLog ? `Energy ${ENERGY_LABELS[moodLog.energy]}` : 'Log below'}
-            color="text-yellow-400" />
+            sub={moodLog ? `Energy ${ENERGY_LABELS[moodLog.energy]}` : 'Tap to log'}
+            onClick={() => {
+              if (moodLog) { setMood(moodLog.mood); setEnergy(moodLog.energy); }
+              setShowMoodSheet(true);
+            }} />
         </div>
       </div>
 
       {/* Workouts */}
       {workouts.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Today's Workouts</p>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#969A9E' }}>Today's Workouts</p>
           {workouts.map((w, i) => (
-            <div key={i} className="bg-[#1e293b] rounded-2xl p-4 flex items-center gap-3">
-              <span className="text-2xl">🏋️</span>
+            <div key={i} className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#2D383E' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#051822', color: '#AA7452' }}>
+                <Icon name="bolt" size={16} />
+              </div>
               <div>
-                <p className="font-semibold text-slate-100 text-sm">{w.workout_type}</p>
-                <p className="text-xs text-slate-400">
+                <p className="font-semibold text-sm" style={{ color: '#D4C9C7' }}>{w.workout_type}</p>
+                <p className="text-xs" style={{ color: '#969A9E' }}>
                   {w.duration_minutes ? `${Math.round(w.duration_minutes)} min` : ''}
-                  {w.calories_burned ? ` · ${Math.round(w.calories_burned)} kcal` : ''}
-                  {w.avg_heart_rate ? ` · ${Math.round(w.avg_heart_rate)} bpm avg` : ''}
+                  {w.calories_burned  ? ` · ${Math.round(w.calories_burned)} kcal` : ''}
+                  {w.avg_heart_rate   ? ` · ${Math.round(w.avg_heart_rate)} bpm avg` : ''}
                 </p>
               </div>
             </div>
@@ -151,70 +217,75 @@ export default function Today() {
         </div>
       )}
 
-      {/* Mood Log */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Log Mood</p>
-          {moodSaved && <span className="text-xs text-green-400">Saved ✓</span>}
+      {Object.keys(m).length === 0 && (
+        <div className="rounded-2xl p-4 border border-dashed text-center" style={{ background: '#2D383E', borderColor: '#3A4C55' }}>
+          <p className="text-sm" style={{ color: '#969A9E' }}>No health data synced yet.</p>
+          <p className="text-xs mt-1" style={{ color: '#6B7680' }}>Tap Sync to pull from Apple Health.</p>
         </div>
+      )}
 
-        {!showMoodForm && !moodSaved ? (
-          <button
-            onClick={() => setShowMoodForm(true)}
-            className="w-full bg-[#1e293b] rounded-2xl p-4 text-sm text-slate-400 border border-dashed border-slate-600 hover:border-indigo-500 transition-colors"
-          >
-            + Log how you feel today
-          </button>
-        ) : showMoodForm ? (
-          <div className="bg-[#1e293b] rounded-2xl p-4 space-y-4">
+      {/* Daily quote */}
+      <p className="text-center text-[11px] italic px-6 pb-1" style={{ color: '#3A4C55' }}>
+        "{dailyQuote()}"
+      </p>
+
+      {/* Mood bottom sheet */}
+      {showMoodSheet && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ maxWidth: 430, margin: '0 auto' }}>
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowMoodSheet(false)} />
+          <div className="relative rounded-t-3xl p-5 space-y-5" style={{ background: '#051822', paddingBottom: 'calc(max(env(safe-area-inset-bottom), 8px) + 72px)' }}>
+            <div className="w-10 h-1 rounded-full mx-auto" style={{ background: '#3A4C55' }} />
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold" style={{ color: '#D4C9C7' }}>How are you feeling?</h2>
+              <button onClick={() => setShowMoodSheet(false)} className="text-sm" style={{ color: '#6B7680' }}>Cancel</button>
+            </div>
+
             <div>
-              <p className="text-xs text-slate-400 mb-2">Mood</p>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#969A9E' }}>Mood</p>
               <div className="flex gap-2">
-                {[1,2,3,4,5].map((v) => (
+                {[1,2,3,4,5].map(v => (
                   <button key={v} onClick={() => setMood(v)}
-                    className={`flex-1 text-xl py-1 rounded-xl transition-all ${mood === v ? 'bg-indigo-600 scale-110' : 'bg-slate-700'}`}>
+                    className="flex-1 text-2xl py-2 rounded-2xl transition-all"
+                    style={{ background: mood === v ? '#AA7452' : '#2D383E', transform: mood === v ? 'scale(1.1)' : 'scale(1)' }}>
                     {MOOD_LABELS[v]}
                   </button>
                 ))}
               </div>
             </div>
+
             <div>
-              <p className="text-xs text-slate-400 mb-2">Energy</p>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#969A9E' }}>Energy</p>
               <div className="flex gap-2">
-                {[1,2,3,4,5].map((v) => (
+                {[1,2,3,4,5].map(v => (
                   <button key={v} onClick={() => setEnergy(v)}
-                    className={`flex-1 text-xl py-1 rounded-xl transition-all ${energy === v ? 'bg-violet-600 scale-110' : 'bg-slate-700'}`}>
+                    className="flex-1 text-2xl py-2 rounded-2xl transition-all"
+                    style={{ background: energy === v ? '#7C5841' : '#2D383E', transform: energy === v ? 'scale(1.1)' : 'scale(1)' }}>
                     {ENERGY_LABELS[v]}
                   </button>
                 ))}
               </div>
             </div>
-            <input type="text" placeholder="Add a note (optional)" value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none border border-slate-700 focus:border-indigo-500" />
-            <div className="flex gap-2">
-              <button onClick={() => setShowMoodForm(false)}
-                className="flex-1 py-2 rounded-xl text-sm text-slate-400 bg-slate-700">Cancel</button>
-              <button onClick={saveMood}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500">Save</button>
-            </div>
-          </div>
-        ) : null}
-      </div>
 
-      {Object.keys(m).length === 0 && (
-        <div className="bg-[#1e293b] rounded-2xl p-4 border border-dashed border-slate-600 text-center">
-          <p className="text-sm text-slate-400">No health data synced yet.</p>
-          <p className="text-xs text-slate-500 mt-1">Set up Apple Shortcuts to auto-sync from Apple Health.</p>
+            <input
+              type="text"
+              placeholder="Add a note (optional)"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className="w-full rounded-2xl px-4 py-3 text-sm outline-none"
+              style={{ background: '#2D383E', color: '#D4C9C7', border: '1px solid #3A4C55' }}
+            />
+
+            <button
+              onClick={saveMood}
+              disabled={moodSaving}
+              className="w-full py-3.5 rounded-2xl text-sm font-bold disabled:opacity-50 active:opacity-80"
+              style={{ background: '#AA7452', color: '#051822' }}
+            >
+              {moodSaving ? 'Saving…' : moodLog ? 'Update mood' : 'Save mood'}
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
-}
-
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
 }

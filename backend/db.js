@@ -50,6 +50,46 @@ db.exec(`
     summary TEXT,
     generated_at TEXT DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS weight_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL UNIQUE,
+    weight_kg REAL NOT NULL,
+    logged_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS weight_goals (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    start_weight REAL,
+    target_weight REAL,
+    height_cm REAL,
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+
+  INSERT OR IGNORE INTO weight_goals (id) VALUES (1);
+
+  CREATE TABLE IF NOT EXISTS habits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    emoji TEXT DEFAULT '⭐',
+    color TEXT DEFAULT '#6366f1',
+    goal_type TEXT DEFAULT 'boolean',
+    goal_value INTEGER DEFAULT 1,
+    frequency TEXT DEFAULT 'daily',
+    time_range TEXT DEFAULT 'anytime',
+    active INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS habit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    habit_id INTEGER NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    value INTEGER DEFAULT 1,
+    logged_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(habit_id, date)
+  );
 `);
 
 module.exports = db;

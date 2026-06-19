@@ -7,6 +7,8 @@
     "dev": "cd frontend && npm run dev",
     "prestart": "lsof -ti:3001 | xargs kill -9 2>/dev/null; lsof -ti:5173 | xargs kill -9 2>/dev/null; true",
     "start": "concurrently \"npm run server\" \"npm run dev\"",
+    "build": "cd frontend && npm install && npm run build",
+    "serve": "NODE_ENV=production node backend/server.js",
     "install:all": "npm install && cd frontend && npm install"
   },
   "dependencies": {
@@ -18,5 +20,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

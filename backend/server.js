@@ -24,7 +24,17 @@ app.use('/api/health', require('./routes/health'));
 app.use('/api/metrics', require('./routes/metrics'));
 app.use('/api/mood', require('./routes/mood'));
 app.use('/api/insights', require('./routes/insights'));
+app.use('/api/weight', require('./routes/weight'));
+app.use('/api/habits', require('./routes/habits'));
+app.use('/api/meditation', require('./routes/meditation'));
 
 app.get('/api/ping', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-app.listen(PORT, () => console.log(`WellBuddy backend running on http://localhost:${PORT}`));
+// Serve built frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const DIST = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(DIST));
+  app.get('*', (req, res) => res.sendFile(path.join(DIST, 'index.html')));
+}
+
+app.listen(PORT, '0.0.0.0', () => console.log(`WellBuddy running on port ${PORT}`));
