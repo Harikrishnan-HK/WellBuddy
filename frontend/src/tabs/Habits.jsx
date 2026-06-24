@@ -213,7 +213,7 @@ function WeekStrip({ week, weekOffset, selected, onSelect, onWeekChange, rangeMa
             <button
               onClick={() => onWeekChange(-weekOffset)}
               className="text-[10px] px-2 py-0.5 rounded-lg"
-              style={{ color: ACCENT, background: 'rgba(170,116,82,0.15)' }}>
+              style={{ color: ACCENT, background: 'rgba(249,92,75,0.15)' }}>
               Today
             </button>
           )}
@@ -616,7 +616,7 @@ function MonthCalendar({ habits, monthLogs }) {
           // Compute fill opacity based on completion
           const fillAlpha = isFuture ? 0 : pct === 0 ? 0 : Math.max(0.25, pct);
           const fillColor = pct > 0 && !isFuture
-            ? `rgba(170, 116, 82, ${fillAlpha})`
+            ? `rgba(249, 92, 75, ${fillAlpha})`
             : 'transparent';
 
           return (
@@ -644,7 +644,7 @@ function MonthCalendar({ habits, monthLogs }) {
         <span className="text-[10px]" style={{ color: DIM }}>Less</span>
         {[0.25, 0.5, 0.75, 1].map(a => (
           <div key={a} className="w-3.5 h-3.5 rounded-sm"
-            style={{ background: `rgba(170,116,82,${a})` }} />
+            style={{ background: `rgba(249,92,75,${a})` }} />
         ))}
         <span className="text-[10px]" style={{ color: DIM }}>More</span>
       </div>

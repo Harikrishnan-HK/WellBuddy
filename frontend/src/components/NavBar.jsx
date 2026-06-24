@@ -14,9 +14,9 @@ export default function NavBar({ tabs, active, onChange }) {
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50"
       style={{
-        background: 'rgba(45,56,62,0.96)',
+        background: 'rgba(255,255,255,0.96)',
         backdropFilter: 'blur(12px)',
-        borderTop: '1px solid rgba(150,154,158,0.15)',
+        borderTop: '1px solid rgba(228,222,210,0.6)',
         paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
       }}
     >

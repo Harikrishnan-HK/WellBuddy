@@ -73,7 +73,7 @@ export default function Insights() {
         <button
           onClick={regenerate}
           className="text-xs px-3 py-1.5 rounded-xl"
-          style={{ color: ACCENT, background: 'rgba(170,116,82,0.15)', border: `1px solid rgba(170,116,82,0.3)` }}
+          style={{ color: ACCENT, background: 'rgba(249,92,75,0.15)', border: `1px solid rgba(249,92,75,0.3)` }}
         >
           Refresh
         </button>

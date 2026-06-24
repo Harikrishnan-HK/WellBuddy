@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wellbuddy-frontend",
+      "runtimeExecutable": "/Users/hari/.nvm/versions/node/v22.22.3/bin/node",
+      "runtimeArgs": ["/Users/hari/Desktop/WellBuddy/frontend/node_modules/.bin/vite"],
+      "cwd": "frontend",
+      "port": 5173
+    }
+  ]
+}

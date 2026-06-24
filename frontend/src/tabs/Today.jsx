@@ -126,7 +126,7 @@ export default function Today({ onNavigate }) {
 
       {/* Updated time + weight shortcut */}
       <div className="flex items-center justify-between -mt-3">
-        <p className="text-[11px]" style={{ color: '#E4DED2' }}>
+        <p className="text-[11px]" style={{ color: '#9C988F' }}>
           {lastUpdated
             ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
             : ' '}
@@ -225,7 +225,7 @@ export default function Today({ onNavigate }) {
       )}
 
       {/* Daily quote */}
-      <p className="text-center text-[11px] italic px-6 pb-1" style={{ color: '#E4DED2' }}>
+      <p className="text-center text-[11px] italic px-6 pb-1" style={{ color: '#9C988F' }}>
         "{dailyQuote()}"
       </p>
 

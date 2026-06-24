@@ -195,7 +195,7 @@ function BodySection({ m, logs, goals, onSaved }) {
           className="w-full py-3 rounded-2xl text-sm font-semibold border border-dashed"
           style={loggedToday
             ? { borderColor: '#7CA87A', color: '#7CA87A', background: 'rgba(124,168,122,0.1)' }
-            : { borderColor: ACCENT, color: ACCENT, background: 'rgba(170,116,82,0.1)' }}>
+            : { borderColor: ACCENT, color: ACCENT, background: 'rgba(249,92,75,0.1)' }}>
           {loggedToday ? `Logged today · ${currentWeight?.toFixed(1)} kg — update?` : 'Log today\'s weight'}
         </button>
       ) : (
