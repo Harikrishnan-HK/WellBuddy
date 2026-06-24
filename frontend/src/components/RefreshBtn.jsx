@@ -6,7 +6,7 @@ export default function RefreshBtn({ refreshing, onRefresh }) {
       onClick={onRefresh}
       disabled={refreshing}
       className="mt-1 p-2 rounded-xl transition-colors active:opacity-60"
-      style={{ color: '#969A9E' }}
+      style={{ color: '#6B6862' }}
     >
       <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

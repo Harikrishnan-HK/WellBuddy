@@ -28,7 +28,7 @@ export default function NavBar({ tabs, active, onChange }) {
               key={tab}
               onClick={() => onChange(tab)}
               className="flex-1 flex flex-col items-center pt-2 pb-1 gap-0.5 transition-opacity active:opacity-50"
-              style={{ color: isActive ? '#AA7452' : '#969A9E' }}
+              style={{ color: isActive ? '#F95C4B' : '#6B6862' }}
             >
               <span className={`transition-transform duration-150 ${isActive ? 'scale-110' : 'scale-100'}`}>
                 <Icon name={TAB_ICONS[tab]} size={22} />

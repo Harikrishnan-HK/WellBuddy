@@ -2,14 +2,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
 
-const BG     = '#051822';
-const CARD   = '#2D383E';
-const DEEP   = '#1C2C35';
-const ACCENT = '#AA7452';
-const TEXT   = '#D4C9C7';
-const MUTED  = '#969A9E';
-const DIM    = '#6B7680';
-const BORDER = '#3A4C55';
+const BG     = '#F6F4F1';
+const CARD   = '#FFFFFF';
+const DEEP   = '#E4DED2';
+const ACCENT = '#F95C4B';
+const TEXT   = '#000000';
+const MUTED  = '#6B6862';
+const DIM    = '#9C988F';
+const BORDER = '#E4DED2';
 
 export default function Insights() {
   const [summary, setSummary] = useState(null);
